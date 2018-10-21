@@ -2,27 +2,28 @@
     CONSOLE APPLICATION : PipeClient Project Overview
 ========================================================================
 
-AppWizard has created this PipeClient application for you.
+StreamBase task
 
-This file contains a summary of what you will find in each of the files that
-make up your PipeClient application.
+Requirements
+- The client should be able to connect to the server through a NamedPipe
+  It uses "\\.\pipe\mynamedpipe" named pipe and exchanges dapa packed by protobuf
+- The client should be able to make both sync and async calls to the server
+
+- The client should be able to send trivial data (strings, numbers) to the server
+  Data is sent as data buffer and can be serialized using protobuf
+- The client should be able to create objects on the server (based on req-7 below), retrieve them, their attributes and call methods on them
 
 
-PipeClient.vcxproj
-    This is the main project file for VC++ projects generated using an Application Wizard.
-    It contains information about the version of Visual C++ that generated the file, and
-    information about the platforms, configurations, and project features selected with the
-    Application Wizard.
+Pre requirements:
+1. Install Protobuf using vcpkg
+vcpkg install protobuf protobuf:x64-windows
+Follow official guide:
+https://github.com/protocolbuffers/protobuf/blob/master/src/README.md
+2. Add protoc.exe to PATH
+3. Generate Object.proto into pb.h and pb.cc files
 
-PipeClient.vcxproj.filters
-    This is the filters file for VC++ projects generated using an Application Wizard. 
-    It contains information about the association between the files in your project 
-    and the filters. This association is used in the IDE to show grouping of files with
-    similar extensions under a specific node (for e.g. ".cpp" files are associated with the
-    "Source Files" filter).
-
-PipeClient.cpp
-    This is the main application source file.
+TODO:
+make custom build step for Object.proto to generate pb.h and pb.cc files
 
 /////////////////////////////////////////////////////////////////////////////
 Other standard files:
