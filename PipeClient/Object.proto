@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+enum Action
+{
+  STORE = 0;
+  RETRIEVE = 1;
+}
+
+message Object {
+  Action action = 1;
+  string name = 2;
+  bytes data = 3;
+}

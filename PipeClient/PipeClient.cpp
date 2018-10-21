@@ -2,6 +2,8 @@
 //
 
 #include "stdafx.h"
+#include "Object.pb.h"
+
 #include <windows.h> 
 #include <stdio.h>
 #include <conio.h>
@@ -12,14 +14,19 @@
 int _tmain(int argc, TCHAR *argv[])
 {
 	HANDLE hPipe;
-	LPTSTR lpvMessage = TEXT("Default message from client.");
+	LPTSTR lpvMessage; // = TEXT("Default message from client.");
 	TCHAR  chBuf[BUFSIZE];
 	BOOL   fSuccess = FALSE;
 	DWORD  cbRead, cbToWrite, cbWritten, dwMode;
 	LPTSTR lpszPipename = TEXT("\\\\.\\pipe\\mynamedpipe");
 
-	if (argc > 1)
-		lpvMessage = argv[1];
+//	if (argc > 1)
+//		lpvMessage = argv[1];
+	Object object;
+	object.set_action(Action::STORE);
+	object.set_name("Test Object");
+	object.set_data(&object, sizeof(object)); // passing itself for testing
+
 
 	// Try to open a named pipe; wait for it, if necessary. 
 
@@ -73,12 +80,15 @@ int _tmain(int argc, TCHAR *argv[])
 
 	// Send a message to the pipe server. 
 
-	cbToWrite = (lstrlen(lpvMessage) + 1) * sizeof(TCHAR);
-	_tprintf(TEXT("Sending %d byte message: \"%s\"\n"), cbToWrite, lpvMessage);
+//	cbToWrite = (lstrlen(lpvMessage) + 1) * sizeof(TCHAR);
+//	_tprintf(TEXT("Sending %d byte message: \"%s\"\n"), cbToWrite, lpvMessage);
+	object.SerializeToArray(chBuf, BUFSIZE);
+	cbToWrite = BUFSIZE;
 
 	fSuccess = WriteFile(
 		hPipe,                  // pipe handle 
-		lpvMessage,             // message 
+		//lpvMessage,             // message 
+		chBuf,
 		cbToWrite,              // message length 
 		&cbWritten,             // bytes written 
 		NULL);                  // not overlapped 
