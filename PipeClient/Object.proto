@@ -6,8 +6,16 @@ enum Action
   RETRIEVE = 1;
 }
 
+enum Type
+{
+  EXISTING = 0;
+  NEW_CLASS_A = 1;
+  NEW_CLASS_B = 2;
+}
+
 message Object {
   Action action = 1;
-  string name = 2;
-  bytes data = 3;
+  Type type = 2;
+  string name = 3; // used to store and retrieve by name
+  bytes data = 4; // class object instance as byte array, actial container will be std::string
 }

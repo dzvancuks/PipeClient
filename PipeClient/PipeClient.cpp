@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "Object.pb.h"
+#include "ClassA.h"
 
 #include <windows.h> 
 #include <stdio.h>
@@ -22,11 +23,6 @@ int _tmain(int argc, TCHAR *argv[])
 
 //	if (argc > 1)
 //		lpvMessage = argv[1];
-	Object object;
-	object.set_action(Action::STORE);
-	object.set_name("Test Object");
-	object.set_data(&object, sizeof(object)); // passing itself for testing
-
 
 	// Try to open a named pipe; wait for it, if necessary. 
 
@@ -82,6 +78,9 @@ int _tmain(int argc, TCHAR *argv[])
 
 //	cbToWrite = (lstrlen(lpvMessage) + 1) * sizeof(TCHAR);
 //	_tprintf(TEXT("Sending %d byte message: \"%s\"\n"), cbToWrite, lpvMessage);
+	Object object;
+	object.set_action(Action::RETRIEVE);
+	object.set_type(Type::NEW_CLASS_A);
 	object.SerializeToArray(chBuf, BUFSIZE);
 	cbToWrite = BUFSIZE;
 
@@ -99,7 +98,7 @@ int _tmain(int argc, TCHAR *argv[])
 		return -1;
 	}
 
-	printf("\nMessage sent to server, receiving reply as follows:\n");
+	printf("\nRetrieve new Class A message sent to server, receiving reply as follows:\n");
 
 	do
 	{
@@ -115,7 +114,13 @@ int _tmain(int argc, TCHAR *argv[])
 		if (!fSuccess && GetLastError() != ERROR_MORE_DATA)
 			break;
 
-		_tprintf(TEXT("\"%s\"\n"), chBuf);
+		//_tprintf(TEXT("\"%s\"\n"), chBuf);
+		Object new_object;
+		new_object.ParseFromArray(chBuf, BUFSIZE);
+		printf("Received new object %s\n", new_object.name().c_str());
+		ClassA* class_a_ptr = static_cast<ClassA*>(malloc(sizeof ClassA));
+		memcpy(class_a_ptr, new_object.data().data(), sizeof ClassA);
+		printf("String data member is \"%s\"\n", class_a_ptr->get_string_member().c_str());
 	} while (!fSuccess);  // repeat loop if ERROR_MORE_DATA 
 
 	if (!fSuccess)

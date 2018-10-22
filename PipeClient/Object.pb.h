@@ -76,6 +76,28 @@ inline bool Action_Parse(
   return ::google::protobuf::internal::ParseNamedEnum<Action>(
     Action_descriptor(), name, value);
 }
+enum Type {
+  EXISTING = 0,
+  NEW_CLASS_A = 1,
+  NEW_CLASS_B = 2,
+  Type_INT_MIN_SENTINEL_DO_NOT_USE_ = ::google::protobuf::kint32min,
+  Type_INT_MAX_SENTINEL_DO_NOT_USE_ = ::google::protobuf::kint32max
+};
+bool Type_IsValid(int value);
+const Type Type_MIN = EXISTING;
+const Type Type_MAX = NEW_CLASS_B;
+const int Type_ARRAYSIZE = Type_MAX + 1;
+
+const ::google::protobuf::EnumDescriptor* Type_descriptor();
+inline const ::std::string& Type_Name(Type value) {
+  return ::google::protobuf::internal::NameOfEnum(
+    Type_descriptor(), value);
+}
+inline bool Type_Parse(
+    const ::std::string& name, Type* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<Type>(
+    Type_descriptor(), name, value);
+}
 // ===================================================================
 
 class Object : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:Object) */ {
@@ -165,9 +187,9 @@ class Object : public ::google::protobuf::Message /* @@protoc_insertion_point(cl
 
   // accessors -------------------------------------------------------
 
-  // string name = 2;
+  // string name = 3;
   void clear_name();
-  static const int kNameFieldNumber = 2;
+  static const int kNameFieldNumber = 3;
   const ::std::string& name() const;
   void set_name(const ::std::string& value);
   #if LANG_CXX11
@@ -179,9 +201,9 @@ class Object : public ::google::protobuf::Message /* @@protoc_insertion_point(cl
   ::std::string* release_name();
   void set_allocated_name(::std::string* name);
 
-  // bytes data = 3;
+  // bytes data = 4;
   void clear_data();
-  static const int kDataFieldNumber = 3;
+  static const int kDataFieldNumber = 4;
   const ::std::string& data() const;
   void set_data(const ::std::string& value);
   #if LANG_CXX11
@@ -199,6 +221,12 @@ class Object : public ::google::protobuf::Message /* @@protoc_insertion_point(cl
   ::Action action() const;
   void set_action(::Action value);
 
+  // .Type type = 2;
+  void clear_type();
+  static const int kTypeFieldNumber = 2;
+  ::Type type() const;
+  void set_type(::Type value);
+
   // @@protoc_insertion_point(class_scope:Object)
  private:
 
@@ -206,6 +234,7 @@ class Object : public ::google::protobuf::Message /* @@protoc_insertion_point(cl
   ::google::protobuf::internal::ArenaStringPtr name_;
   ::google::protobuf::internal::ArenaStringPtr data_;
   int action_;
+  int type_;
   mutable ::google::protobuf::internal::CachedSize _cached_size_;
   friend struct ::protobuf_Object_2eproto::TableStruct;
 };
@@ -234,7 +263,21 @@ inline void Object::set_action(::Action value) {
   // @@protoc_insertion_point(field_set:Object.action)
 }
 
-// string name = 2;
+// .Type type = 2;
+inline void Object::clear_type() {
+  type_ = 0;
+}
+inline ::Type Object::type() const {
+  // @@protoc_insertion_point(field_get:Object.type)
+  return static_cast< ::Type >(type_);
+}
+inline void Object::set_type(::Type value) {
+  
+  type_ = value;
+  // @@protoc_insertion_point(field_set:Object.type)
+}
+
+// string name = 3;
 inline void Object::clear_name() {
   name_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
@@ -287,7 +330,7 @@ inline void Object::set_allocated_name(::std::string* name) {
   // @@protoc_insertion_point(field_set_allocated:Object.name)
 }
 
-// bytes data = 3;
+// bytes data = 4;
 inline void Object::clear_data() {
   data_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
@@ -354,6 +397,11 @@ template <> struct is_proto_enum< ::Action> : ::std::true_type {};
 template <>
 inline const EnumDescriptor* GetEnumDescriptor< ::Action>() {
   return ::Action_descriptor();
+}
+template <> struct is_proto_enum< ::Type> : ::std::true_type {};
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::Type>() {
+  return ::Type_descriptor();
 }
 
 }  // namespace protobuf

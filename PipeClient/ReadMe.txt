@@ -8,7 +8,7 @@ Requirements
 - The client should be able to connect to the server through a NamedPipe
   It uses "\\.\pipe\mynamedpipe" named pipe and exchanges dapa packed by protobuf
 - The client should be able to make both sync and async calls to the server
-
+  Taken from official MS example https://docs.microsoft.com/ru-ru/windows/desktop/ipc/named-pipe-client
 - The client should be able to send trivial data (strings, numbers) to the server
   Data is sent as data buffer and can be serialized using protobuf
 - The client should be able to create objects on the server (based on req-7 below), retrieve them, their attributes and call methods on them
