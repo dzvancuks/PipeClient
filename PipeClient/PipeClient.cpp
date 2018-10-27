@@ -10,129 +10,135 @@
 #include <conio.h>
 #include <tchar.h>
 
-#define BUFSIZE 512
-
-int _tmain(int argc, TCHAR *argv[])
+class Pipe // singleton
 {
-	HANDLE hPipe;
-	LPTSTR lpvMessage; // = TEXT("Default message from client.");
-	TCHAR  chBuf[BUFSIZE];
-	BOOL   fSuccess = FALSE;
-	DWORD  cbRead, cbToWrite, cbWritten, dwMode;
-	LPTSTR lpszPipename = TEXT("\\\\.\\pipe\\mynamedpipe");
-
-//	if (argc > 1)
-//		lpvMessage = argv[1];
-
-	// Try to open a named pipe; wait for it, if necessary. 
-
-	while (1)
+public:
+	static const int BUFSIZE = 512;
+	static HANDLE handle()
 	{
-		hPipe = CreateFile(
-			lpszPipename,   // pipe name 
-			GENERIC_READ |  // read and write access 
-			GENERIC_WRITE,
-			0,              // no sharing 
-			NULL,           // default security attributes
-			OPEN_EXISTING,  // opens existing pipe 
-			0,              // default attributes 
-			NULL);          // no template file 
+		static Pipe instance;
+		return instance.hPipe;
+	}
+private:
+	HANDLE hPipe = nullptr;
+	const LPTSTR pipe_name = TEXT("\\\\.\\pipe\\mynamedpipe");
 
-							// Break if the pipe handle is valid. 
-
-		if (hPipe != INVALID_HANDLE_VALUE)
-			break;
-
-		// Exit if an error other than ERROR_PIPE_BUSY occurs. 
-
-		if (GetLastError() != ERROR_PIPE_BUSY)
+	Pipe()
+	{
+		while (1)
 		{
-			_tprintf(TEXT("Could not open pipe. GLE=%d\n"), GetLastError());
-			return -1;
+			hPipe = CreateFile(
+				pipe_name,   // pipe name 
+				GENERIC_READ |  // read and write access 
+				GENERIC_WRITE,
+				0,              // no sharing 
+				NULL,           // default security attributes
+				OPEN_EXISTING,  // opens existing pipe 
+				0,              // default attributes 
+				NULL);          // no template file 
+
+								// Break if the pipe handle is valid. 
+
+			if (hPipe != INVALID_HANDLE_VALUE)
+				break;
+
+			// Exit if an error other than ERROR_PIPE_BUSY occurs. 
+			assert(GetLastError() != ERROR_PIPE_BUSY);
+
+			// All pipe instances are busy, so wait for 20 seconds. 
+			assert(!WaitNamedPipe(pipe_name, 20000));
 		}
 
-		// All pipe instances are busy, so wait for 20 seconds. 
-
-		if (!WaitNamedPipe(lpszPipename, 20000))
-		{
-			printf("Could not open pipe: 20 second wait timed out.");
-			return -1;
-		}
+		// The pipe connected; change to message-read mode. 
+		DWORD dwMode = PIPE_READMODE_MESSAGE;
+		assert(SetNamedPipeHandleState(
+			hPipe,    // pipe handle 
+			&dwMode,  // new pipe mode 
+			NULL,     // don't set maximum bytes 
+			NULL)     // don't set maximum time 
+		);
 	}
 
-	// The pipe connected; change to message-read mode. 
-
-	dwMode = PIPE_READMODE_MESSAGE;
-	fSuccess = SetNamedPipeHandleState(
-		hPipe,    // pipe handle 
-		&dwMode,  // new pipe mode 
-		NULL,     // don't set maximum bytes 
-		NULL);    // don't set maximum time 
-	if (!fSuccess)
+	~Pipe()
 	{
-		_tprintf(TEXT("SetNamedPipeHandleState failed. GLE=%d\n"), GetLastError());
-		return -1;
+		CloseHandle(hPipe);
 	}
 
-	// Send a message to the pipe server. 
+};
 
-//	cbToWrite = (lstrlen(lpvMessage) + 1) * sizeof(TCHAR);
-//	_tprintf(TEXT("Sending %d byte message: \"%s\"\n"), cbToWrite, lpvMessage);
-	Object object;
-	object.set_action(Action::RETRIEVE);
-	object.set_type(Type::NEW_CLASS_A);
-	object.SerializeToArray(chBuf, BUFSIZE);
-	cbToWrite = BUFSIZE;
+bool send_receive(const Object& to_send, Object& to_receive)
+{
+	char  buf[Pipe::BUFSIZE];
+	BOOL   success = FALSE;
+	DWORD  read, written;
 
-	fSuccess = WriteFile(
-		hPipe,                  // pipe handle 
-		//lpvMessage,             // message 
-		chBuf,
-		cbToWrite,              // message length 
-		&cbWritten,             // bytes written 
+	to_send.SerializeToArray(buf, Pipe::BUFSIZE);
+
+	success = WriteFile(
+		Pipe::handle(),
+		buf,
+		to_send.ByteSizeLong(), // message length 
+		&written,               // bytes written 
 		NULL);                  // not overlapped 
 
-	if (!fSuccess)
+	if (!success)
 	{
 		_tprintf(TEXT("WriteFile to pipe failed. GLE=%d\n"), GetLastError());
-		return -1;
+		return false;
 	}
 
-	printf("\nRetrieve new Class A message sent to server, receiving reply as follows:\n");
+	printf("\nSent object message, receiving reply as follows:\n");
 
 	do
 	{
 		// Read from the pipe. 
 
-		fSuccess = ReadFile(
-			hPipe,    // pipe handle 
-			chBuf,    // buffer to receive reply 
-			BUFSIZE * sizeof(TCHAR),  // size of buffer 
-			&cbRead,  // number of bytes read 
+		success = ReadFile(
+			Pipe::handle(),
+			buf,    // buffer to receive reply 
+			Pipe::BUFSIZE,  // size of buffer 
+			&read,  // number of bytes read 
 			NULL);    // not overlapped 
 
-		if (!fSuccess && GetLastError() != ERROR_MORE_DATA)
+		if (!success && GetLastError() != ERROR_MORE_DATA)
 			break;
 
-		//_tprintf(TEXT("\"%s\"\n"), chBuf);
-		Object new_object;
-		new_object.ParseFromArray(chBuf, BUFSIZE);
-		printf("Received new object %s\n", new_object.name().c_str());
-		ClassA* class_a_ptr = static_cast<ClassA*>(malloc(sizeof ClassA));
-		memcpy(class_a_ptr, new_object.data().data(), sizeof ClassA);
-		printf("String data member is \"%s\"\n", class_a_ptr->get_string_member().c_str());
-	} while (!fSuccess);  // repeat loop if ERROR_MORE_DATA 
+		to_receive.ParseFromArray(buf, Pipe::BUFSIZE);
+		printf("Received new object %s\n", to_receive.name().c_str());
 
-	if (!fSuccess)
+	} while (!success);  // repeat loop if ERROR_MORE_DATA 
+
+	if (!success)
 	{
 		_tprintf(TEXT("ReadFile from pipe failed. GLE=%d\n"), GetLastError());
-		return -1;
+		return false;
 	}
 
+	return true;
+}
+
+bool run_tests()
+{
+	Object to_retrieve_class_a, retrieved_class_a;
+	to_retrieve_class_a.set_action(Action::RETRIEVE);
+	to_retrieve_class_a.set_type(Type::NEW_CLASS_A);
+
+	if (!send_receive(to_retrieve_class_a, retrieved_class_a))
+	{
+		return false;
+	}
+
+	ClassA* class_a_ptr = static_cast<ClassA*>(malloc(sizeof ClassA));
+	memcpy(class_a_ptr, retrieved_class_a.data().data(), sizeof ClassA);
+	printf("String data member is \"%s\"\n", class_a_ptr->get_string_member().c_str());
+}
+
+int _tmain(int argc, TCHAR *argv[])
+{
+	run_tests();
+	
 	printf("\n<End of message, press ENTER to terminate connection and exit>");
 	_getch();
-
-	CloseHandle(hPipe);
 
 	return 0;
 }
