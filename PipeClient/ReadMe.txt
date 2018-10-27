@@ -11,7 +11,11 @@ Requirements
   Taken from official MS example https://docs.microsoft.com/ru-ru/windows/desktop/ipc/named-pipe-client
 - The client should be able to send trivial data (strings, numbers) to the server
   Data is sent as data buffer and can be serialized using protobuf
+  Any data type can be added to Object.proto
 - The client should be able to create objects on the server (based on req-7 below), retrieve them, their attributes and call methods on them
+  Added 2 test case scenarios:
+  -- Create object on server, retrieve it and use
+  -- Create object on client side, store on server using specified name, retrieve by name and use
 
 
 Pre requirements:
@@ -23,7 +27,9 @@ https://github.com/protocolbuffers/protobuf/blob/master/src/README.md
 3. Generate Object.proto into pb.h and pb.cc files
 
 TODO:
-make custom build step for Object.proto to generate pb.h and pb.cc files
+- make custom build step for Object.proto to generate pb.h and pb.cc files
+- add variability using new ClassB
+- make "deep serialization" for custom classes, one way is to use protobuf for ClassA
 
 /////////////////////////////////////////////////////////////////////////////
 Other standard files:
