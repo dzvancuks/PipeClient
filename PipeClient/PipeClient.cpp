@@ -103,7 +103,7 @@ bool send_receive(const Object& to_send, Object& to_receive)
 		if (!success && GetLastError() != ERROR_MORE_DATA)
 			break;
 
-		to_receive.ParseFromArray(buf, Pipe::BUFSIZE);
+		to_receive.ParseFromArray(buf, read);
 		printf("Received new object %s\n", to_receive.name().c_str());
 
 	} while (!success);  // repeat loop if ERROR_MORE_DATA 
@@ -119,18 +119,59 @@ bool send_receive(const Object& to_send, Object& to_receive)
 
 bool run_tests()
 {
-	Object to_retrieve_class_a, retrieved_class_a;
-	to_retrieve_class_a.set_action(Action::RETRIEVE);
-	to_retrieve_class_a.set_type(Type::NEW_CLASS_A);
-
-	if (!send_receive(to_retrieve_class_a, retrieved_class_a))
 	{
-		return false;
+		// Test 1: retrieve new object
+
+		Object to_retrieve_class_a, retrieved_class_a;
+		to_retrieve_class_a.set_action(Action::RETRIEVE);
+		to_retrieve_class_a.set_type(Type::NEW_CLASS_A);
+
+		if (!send_receive(to_retrieve_class_a, retrieved_class_a))
+		{
+			return false;
+		}
+
+		ClassA* class_a_ptr = static_cast<ClassA*>(malloc(sizeof ClassA));
+		memcpy(class_a_ptr, retrieved_class_a.data().data(), sizeof ClassA);
+		printf("String data member is \"%s\"\n", class_a_ptr->get_string_member().c_str());
 	}
 
-	ClassA* class_a_ptr = static_cast<ClassA*>(malloc(sizeof ClassA));
-	memcpy(class_a_ptr, retrieved_class_a.data().data(), sizeof ClassA);
-	printf("String data member is \"%s\"\n", class_a_ptr->get_string_member().c_str());
+	{
+		// Test 2: store object and retrieve it
+
+		ClassA class_a_object;
+		class_a_object.set_integer_member(100); // some random data
+		class_a_object.set_string_member("Some data");
+
+		std::string stored_name = "class_a_1";
+
+		Object to_store, to_retrieve, retrieved;
+		to_store.set_action(Action::STORE);
+		to_store.set_name(stored_name);
+		to_store.set_data(&class_a_object, sizeof class_a_object);
+
+		if (!send_receive(to_store, retrieved))
+		{
+			return false;
+		}
+
+		to_retrieve.set_action(Action::RETRIEVE);
+		to_retrieve.set_type(Type::EXISTING);
+		to_retrieve.set_name(stored_name);
+
+		if (!send_receive(to_retrieve, retrieved))
+		{
+			return false;
+		}
+
+		ClassA* class_a_ptr = static_cast<ClassA*>(malloc(sizeof ClassA));
+		memcpy(class_a_ptr, retrieved.data().data(), sizeof ClassA);
+		if (class_a_ptr->get_integer_member() == class_a_object.get_integer_member() &&
+			!strcmp(class_a_ptr->get_string_member().c_str(), class_a_object.get_string_member().c_str()))
+		{
+			printf("ClassA was successfully stored and retrieved\n");
+		}
+	}
 }
 
 int _tmain(int argc, TCHAR *argv[])
